@@ -3,6 +3,7 @@
 import React, { CSSProperties, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Float, MeshDistortMaterial } from "@react-three/drei";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Activity,
@@ -221,88 +222,68 @@ function MiniProductFrame() {
         scale={1.04}
         duration={7}
       />
-      <div className="relative overflow-hidden rounded-[18px] border border-white/20 bg-[#07080a] shadow-2xl">
-        <div className="flex h-12 items-center justify-between border-b border-white/10 px-4">
+      <div className="product-shell">
+        <div className="product-topbar">
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-[#ff8964]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#5683da]" />
             <span className="h-2.5 w-2.5 rounded-full bg-white/30" />
           </div>
-          <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-white/40">
-            AEGIS / Agent Control Plane
-          </span>
-          <div className="w-14" />
+          <span>AEGIS / Agent Control Plane</span>
+          <div className="h-7 w-16 rounded-full border border-white/10 bg-white/[0.03]" />
         </div>
-        <div className="grid min-h-[430px] grid-cols-1 md:grid-cols-[220px_1fr]">
-          <aside className="border-b border-white/10 bg-black/45 p-5 md:border-b-0 md:border-r">
-            <div className="flex h-9 items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 text-white/45">
+        <div className="product-dashboard">
+          <aside className="product-sidebar">
+            <div className="product-search">
               <Search className="h-4 w-4" />
-              <span className="text-xs">Search memory...</span>
+              Search memory
             </div>
-            <div className="mt-7 space-y-4">
-              {["Finance", "Customers", "Workflows", "Knowledge"].map((item, index) => (
-                <div
-                  key={item}
-                  className={`flex items-center justify-between rounded-md px-3 py-2 text-xs ${
-                    index === 1 ? "bg-white text-black" : "text-white/55"
-                  }`}
-                >
-                  <span>{item}</span>
-                  <span>{index === 1 ? "Live" : "Ready"}</span>
-                </div>
-              ))}
-            </div>
+            {["Finance", "Customers", "Workflows", "Knowledge"].map((item, index) => (
+              <div key={item} className={`product-nav-item ${index === 1 ? "active" : ""}`}>
+                <span>{item}</span>
+                <span>{index === 1 ? "Live" : "Ready"}</span>
+              </div>
+            ))}
           </aside>
-          <div className="relative overflow-hidden p-5 sm:p-8">
-            <div className="absolute inset-x-12 top-0 h-40 bg-[radial-gradient(circle,rgba(255,137,100,0.28),transparent_68%)] blur-3xl" />
-            <div className="relative grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-              <div className="rounded-lg border border-white/10 bg-white/[0.03] p-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-white">Revenue Anomaly Review</span>
-                  <span className="rounded-full bg-[#ff8964]/15 px-3 py-1 text-[10px] text-[#ffb59d]">
-                    High priority
-                  </span>
+          <div className="product-main">
+            <div className="product-hero-card">
+              <div>
+                <span className="panel-kicker">Revenue Anomaly</span>
+                <h3>$12.5K ad spend spike</h3>
+                <p>Finance agent found a paid acquisition charge 3.1x above the monthly average.</p>
+              </div>
+              <span className="priority-pill">High priority</span>
+            </div>
+            <div className="product-panels">
+              <div className="agent-timeline">
+                {[
+                  ["Finance", "Matched ledger row against historical campaign spend."],
+                  ["CEO", "Routed evidence to marketing and cash-flow review."],
+                  ["Ops", "Prepared owner checklist and approval workflow."],
+                ].map(([label, text]) => (
+                  <div key={label} className="timeline-row">
+                    <span>{label}</span>
+                    <p>{text}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="source-panel">
+                <div className="flex items-center gap-3">
+                  <Brain className="h-5 w-5 text-[#7aa7ff]" />
+                  <h3>Sources</h3>
                 </div>
-                <div className="mt-6 space-y-3">
-                  {[
-                    ["Finance agent", "Detected a 3.1x ad spend spike in paid acquisition."],
-                    ["CEO agent", "Routed evidence to marketing and cash-flow workflows."],
-                    ["Ops agent", "Prepared approval request and follow-up checklist."],
-                  ].map(([title, text]) => (
-                    <div key={title} className="rounded-md border border-white/8 bg-black/35 p-4">
-                      <p className="text-xs font-semibold text-white">{title}</p>
-                      <p className="mt-1 text-xs leading-relaxed text-white/50">{text}</p>
+                <div className="source-list">
+                  {["Ledger_June2026.csv", "Marketing_ROI.pdf", "CRM_Accounts.json"].map((source) => (
+                    <div key={source}>
+                      <span>{source}</span>
+                      <CheckCircle2 className="h-4 w-4 text-[#7aa7ff]" />
                     </div>
                   ))}
                 </div>
-              </div>
-              <div className="space-y-5">
-                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-5">
-                  <div className="flex items-center gap-3">
-                    <Brain className="h-5 w-5 text-[#5683da]" />
-                    <span className="text-sm font-semibold text-white">Knowledge Sources</span>
-                  </div>
-                  <div className="mt-5 space-y-3 text-xs text-white/50">
-                    <div className="flex justify-between">
-                      <span>Ledger_June2026.csv</span>
-                      <span>Indexed</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Marketing_ROI.pdf</span>
-                      <span>Synced</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>CRM_Accounts.json</span>
-                      <span>Synced</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-5">
-                  <span className="text-sm font-semibold text-white">Confidence</span>
-                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
-                    <div className="h-full w-[86%] rounded-full bg-white" />
-                  </div>
-                  <p className="mt-3 text-xs text-white/45">86% evidence-backed action plan.</p>
+                <div className="confidence-box">
+                  <span>Evidence confidence</span>
+                  <strong>86%</strong>
+                  <div><span /></div>
                 </div>
               </div>
             </div>
@@ -470,11 +451,16 @@ export default function LandingPage() {
             className="flex w-fit items-center gap-3"
             aria-label="AEGIS home"
           >
-            <span className="relative h-2.5 w-2.5 rounded-full bg-white">
-              <span className="absolute inset-0 rounded-full bg-white opacity-30 animate-ping" />
-            </span>
-            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-white">
-              AEGIS.DEV
+            <Image
+              src="/aegis_logo_with_bg.jpeg"
+              alt=""
+              width={28}
+              height={28}
+              className="brand-logo"
+              priority
+            />
+            <span className="font-mono text-[12px] font-bold uppercase tracking-[0.24em] text-white">
+              AEGIIS
             </span>
           </button>
           <div className="hidden items-center gap-8 font-mono text-[10px] uppercase tracking-[0.18em] text-white/45 md:flex">
@@ -494,7 +480,7 @@ export default function LandingPage() {
           <button
             type="button"
             onClick={() => router.push("/login")}
-            className="rounded-full border border-white/15 px-5 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-white transition hover:bg-white hover:text-black"
+            className="signin-button"
           >
             Sign in
           </button>
@@ -740,7 +726,7 @@ export default function LandingPage() {
 
       <footer className="border-t border-white/10 bg-[#050505] px-6 py-8 text-white md:px-12 lg:px-20">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 text-xs text-white/40 sm:flex-row sm:items-center sm:justify-between">
-          <span className="font-mono uppercase tracking-[0.2em]">AEGIS.DEV</span>
+          <span className="font-mono uppercase tracking-[0.2em]">AEGIIS</span>
           <span>Autonomous intelligence workspace for business operations.</span>
         </div>
       </footer>
