@@ -208,13 +208,14 @@ const productivityCards = [
     title: "Critical alerts.",
     text: "Surface anomalies before they turn into missed revenue or operational drag.",
     className: "lg:col-span-1",
-    visual: "alert",
+    visual: "alert",  
   },
 ];
 
 function MiniProductFrame() {
   return (
-    <div className="product-frame">
+    <div className="product-frame relative mx-auto mt-16 w-full max-w-[1000px]">
+      {/* Glow Effect Element wrapper */}
       <GlowEffect
         className="rounded-[18px] opacity-80"
         colors={["#5683da", "#ff8964", "#ffffff", "#5683da"]}
@@ -222,71 +223,115 @@ function MiniProductFrame() {
         scale={1.04}
         duration={7}
       />
-      <div className="product-shell">
-        <div className="product-topbar">
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#ff8964]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#5683da]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-white/30" />
+      
+      {/* Main Terminal/App Frame */}
+      <div className="relative border border-white/10 bg-[#0c0c0e]/95 backdrop-blur-md rounded-xl overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.6)] font-sans text-white">
+        
+        {/* Header Bar */}
+        <div className="flex items-center justify-between border-b border-white/5 bg-black/40 px-4 py-3 text-xs text-white/40 font-mono tracking-wide">
+          <div className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#ef4444]/80" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#eab308]/80" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#22c55e]/80" />
+            <span className="ml-2 text-[11px] text-white/30">&gt;_ AEGIS / Agent Control Plane</span>
           </div>
-          <span>AEGIS / Agent Control Plane</span>
-          <div className="h-7 w-16 rounded-full border border-white/10 bg-white/[0.03]" />
+          <span className="text-[10px] font-bold text-[#ff8964] bg-[#ff8964]/10 border border-[#ff8964]/20 px-2 py-0.5 rounded uppercase tracking-wider">
+            High Priority
+          </span>
         </div>
-        <div className="product-dashboard">
-          <aside className="product-sidebar">
-            <div className="product-search">
-              <Search className="h-4 w-4" />
-              Search memory
+
+        {/* Dashboard Panels Layout Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-white/5 bg-black/20">
+          
+          {/* Left Column: Tracer Matrix Stream (8 Cols) */}
+          <div className="lg:col-span-8 p-6 flex flex-col gap-6">
+            <div>
+              <span className="text-[10px] uppercase tracking-widest font-mono text-amber-500 font-semibold block mb-1">
+                Live Alert Layer
+              </span>
+              <h3 className="text-xl font-bold tracking-tight text-white mb-2">
+                $12.5K ad spend spike detected
+              </h3>
+              <p className="text-sm leading-relaxed text-white/50">
+                Finance agent identified an independent paid acquisition invoice charging{" "}
+                <span className="text-[#ff8964] font-medium">3.1x above</span> the historical monthly target.
+              </p>
             </div>
-            {["Finance", "Customers", "Workflows", "Knowledge"].map((item, index) => (
-              <div key={item} className={`product-nav-item ${index === 1 ? "active" : ""}`}>
-                <span>{item}</span>
-                <span>{index === 1 ? "Live" : "Ready"}</span>
+
+            {/* Step execution path tracer */}
+            <div className="flex flex-col gap-3">
+              <span className="text-[10px] font-mono tracking-widest text-white/30 uppercase block mb-1">
+                Execution Steps Tracer
+              </span>
+              
+              <div className="flex items-start gap-3 bg-white/[0.01] border border-white/5 rounded-lg p-3.5 text-xs transition hover:bg-white/[0.02]">
+                <span className="h-2 w-2 rounded-full bg-[#22c55e] mt-1.5 shrink-0" />
+                <p className="leading-relaxed text-white/70">
+                  <span className="font-mono text-white font-semibold mr-1.5">[Finance Node]</span> 
+                  Matched ledger row against historical marketing campaign spend records.
+                </p>
               </div>
-            ))}
-          </aside>
-          <div className="product-main">
-            <div className="product-hero-card">
-              <div>
-                <span className="panel-kicker">Revenue Anomaly</span>
-                <h3>$12.5K ad spend spike</h3>
-                <p>Finance agent found a paid acquisition charge 3.1x above the monthly average.</p>
+
+              <div className="flex items-start gap-3 bg-white/[0.01] border border-white/5 rounded-lg p-3.5 text-xs transition hover:bg-white/[0.02]">
+                <span className="h-2 w-2 rounded-full bg-[#3b82f6] mt-1.5 shrink-0" />
+                <p className="leading-relaxed text-white/70">
+                  <span className="font-mono text-white font-semibold mr-1.5">[CEO Router]</span> 
+                  Dispatched contextual data packets and evidence directly to{" "}
+                  <span className="underline decoration-white/30 underline-offset-4 text-white font-medium">marketing group</span>.
+                </p>
               </div>
-              <span className="priority-pill">High priority</span>
+
+              <div className="flex items-start gap-3 bg-white/[0.01] border border-white/5 rounded-lg p-3.5 text-xs transition hover:bg-white/[0.02]">
+                <span className="text-white/40 font-mono text-sm leading-none shrink-0 mt-0.5 font-bold">→</span>
+                <p className="leading-relaxed text-white/70">
+                  <span className="font-mono text-white font-semibold mr-1.5">[Ops Automator]</span> 
+                  Drafted instant checklist and multi-sig review workflow layout assigned for{" "}
+                  <span className="text-white font-medium">CEO Approval</span>.
+                </p>
+              </div>
             </div>
-            <div className="product-panels">
-              <div className="agent-timeline">
+          </div>
+
+          {/* Right Column: Ground Verification & Score (4 Cols) */}
+          <div className="lg:col-span-4 p-6 flex flex-col justify-between gap-8 bg-black/10">
+            {/* Top Section: Records Vault */}
+            <div className="flex flex-col gap-3">
+              <span className="text-[10px] font-mono tracking-widest text-white/30 uppercase block">
+                Verified Records
+              </span>
+              <div className="flex flex-col gap-1.5">
                 {[
-                  ["Finance", "Matched ledger row against historical campaign spend."],
-                  ["CEO", "Routed evidence to marketing and cash-flow review."],
-                  ["Ops", "Prepared owner checklist and approval workflow."],
-                ].map(([label, text]) => (
-                  <div key={label} className="timeline-row">
-                    <span>{label}</span>
-                    <p>{text}</p>
+                  "Ledger_June2026.csv",
+                  "Marketing_ROI.pdf",
+                  "CRM_Accounts.json",
+                ].map((fileName) => (
+                  <div
+                    key={fileName}
+                    className="flex items-center justify-between border border-white/5 bg-white/[0.02] px-3 py-2 rounded font-mono text-[11px] text-white/70 transition hover:border-white/10"
+                  >
+                    <span className="truncate pr-2">{fileName}</span>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-[#22c55e] shrink-0" />
                   </div>
                 ))}
               </div>
-              <div className="source-panel">
-                <div className="flex items-center gap-3">
-                  <Brain className="h-5 w-5 text-[#7aa7ff]" />
-                  <h3>Sources</h3>
-                </div>
-                <div className="source-list">
-                  {["Ledger_June2026.csv", "Marketing_ROI.pdf", "CRM_Accounts.json"].map((source) => (
-                    <div key={source}>
-                      <span>{source}</span>
-                      <CheckCircle2 className="h-4 w-4 text-[#7aa7ff]" />
-                    </div>
-                  ))}
-                </div>
-                <div className="confidence-box">
-                  <span>Evidence confidence</span>
-                  <strong>86%</strong>
-                  <div><span /></div>
-                </div>
+            </div>
+
+            {/* Bottom Section: Confidence scoring engine gauge */}
+            <div className="border-t border-white/5 pt-5">
+              <span className="text-[10px] font-mono tracking-widest text-white/30 uppercase block mb-2">
+                Evidence Confidence Score
+              </span>
+              <div className="flex items-baseline gap-2 mb-2">
+                <span className="text-3xl font-black tracking-tight text-white">86%</span>
+                <span className="text-[10px] font-mono text-[#22c55e] bg-[#22c55e]/10 px-1.5 py-0.5 rounded uppercase font-semibold">
+                  High certainty
+                </span>
+              </div>
+              <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                <div className="h-full w-[86%] bg-gradient-to-r from-[#22c55e] to-[#3b82f6] rounded-full" />
               </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -452,7 +497,7 @@ export default function LandingPage() {
             aria-label="AEGIS home"
           >
             <Image
-              src="/aegis_logo_with_bg.jpeg"
+              src="/aegis_logo_without_bg.png"
               alt=""
               width={28}
               height={28}
@@ -730,409 +775,6 @@ export default function LandingPage() {
           <span>Autonomous intelligence workspace for business operations.</span>
         </div>
       </footer>
-
-      <style jsx global>{`
-        html,
-        body {
-          overflow-x: hidden;
-        }
-
-        .landing-nav {
-          position: absolute;
-          inset: 0 0 auto;
-          z-index: 30;
-          width: 100%;
-          max-width: 1280px;
-          height: 88px;
-          margin: 0 auto;
-          padding: 0 32px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .hero-layout {
-          position: relative;
-          z-index: 10;
-          width: min(100% - 48px, 1280px);
-          min-height: 100svh;
-          margin: 0 auto;
-          padding: 128px 0 72px;
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
-          align-items: center;
-          gap: 56px;
-        }
-
-        .hero-copy {
-          min-width: 0;
-          display: flex;
-          min-height: calc(100svh - 200px);
-          flex-direction: column;
-          justify-content: center;
-          gap: 56px;
-        }
-
-        .hero-title {
-          max-width: 900px;
-          font-size: clamp(64px, 8.2vw, 132px);
-          line-height: 0.88;
-          letter-spacing: 0;
-          font-weight: 900;
-          text-transform: uppercase;
-          color: #ffffff;
-        }
-
-        .hero-subtitle {
-          max-width: 460px;
-          margin-top: 32px;
-          color: rgba(255, 255, 255, 0.44);
-          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-            "Courier New", monospace;
-          font-size: 11px;
-          line-height: 1.9;
-          letter-spacing: 0.28em;
-          text-transform: uppercase;
-        }
-
-        .hero-cta {
-          width: fit-content;
-          display: flex;
-          align-items: center;
-          gap: 24px;
-        }
-
-        .hero-deck {
-          z-index: 20;
-          width: 100%;
-          max-width: 380px;
-          justify-self: end;
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .landing-section {
-          position: relative;
-          padding: 120px 32px;
-        }
-
-        .dark-section,
-        .features-section {
-          background: #0a0a0b;
-          color: #ffffff;
-        }
-
-        .light-section {
-          background: #f5f5f3;
-          color: #000000;
-        }
-
-        .knowledge-section {
-          overflow: hidden;
-          background: #f7f7f6;
-          color: #000000;
-        }
-
-        .landing-container,
-        .features-grid,
-        .knowledge-grid,
-        .cta-container {
-          width: min(100%, 1160px);
-          margin: 0 auto;
-        }
-
-        .section-heading {
-          max-width: 720px;
-        }
-
-        .section-title {
-          max-width: 860px;
-          font-size: clamp(56px, 6.8vw, 104px);
-          line-height: 0.94;
-          letter-spacing: 0;
-          font-weight: 900;
-        }
-
-        .section-copy {
-          max-width: 680px;
-          margin-top: 28px;
-          font-size: 17px;
-          line-height: 1.65;
-        }
-
-        .secondary-copy {
-          margin-top: 20px;
-        }
-
-        .product-frame {
-          position: relative;
-          width: min(100%, 980px);
-          margin: 72px auto 0;
-        }
-
-        .productivity-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 22px;
-          margin-top: 56px;
-        }
-
-        .productivity-grid article {
-          min-height: 356px;
-        }
-
-        .features-section {
-          padding: 20px 32px 120px;
-        }
-
-        .features-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          column-gap: 80px;
-          row-gap: 76px;
-        }
-
-        .features-grid h3 {
-          font-size: clamp(25px, 2.2vw, 34px);
-          line-height: 1.08;
-          letter-spacing: 0;
-        }
-
-        .features-grid p {
-          font-size: 15px;
-          line-height: 1.6;
-        }
-
-        .knowledge-grid {
-          display: grid;
-          grid-template-columns: minmax(280px, 0.75fr) minmax(0, 1.25fr);
-          align-items: center;
-          gap: 80px;
-        }
-
-        .knowledge-visual {
-          position: relative;
-          min-height: 420px;
-        }
-
-        .knowledge-copy {
-          min-width: 0;
-        }
-
-        .cta-section {
-          background: #050505;
-          color: #ffffff;
-          padding-top: 96px;
-          padding-bottom: 96px;
-        }
-
-        .cta-container {
-          display: flex;
-          align-items: end;
-          justify-content: space-between;
-          gap: 48px;
-        }
-
-        .cta-title {
-          max-width: 760px;
-          margin-top: 20px;
-          font-size: clamp(54px, 6.2vw, 96px);
-          line-height: 0.96;
-          letter-spacing: 0;
-          font-weight: 900;
-        }
-
-        .text-outline {
-          color: transparent;
-          -webkit-text-stroke: 1px rgba(255, 255, 255, 0.72);
-          text-stroke: 1px rgba(255, 255, 255, 0.72);
-        }
-
-        .glass-panel {
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          background: rgba(255, 255, 255, 0.035);
-          box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
-          backdrop-filter: blur(22px);
-          -webkit-backdrop-filter: blur(22px);
-        }
-
-        .glow-effect {
-          scale: var(--glow-scale);
-          will-change: transform, background, opacity;
-          animation-duration: var(--glow-duration);
-          animation-iteration-count: infinite;
-          animation-timing-function: linear;
-        }
-
-        .glow-rotate {
-          background: conic-gradient(from 0deg at 50% 50%, var(--glow-colors));
-          animation-name: glow-rotate;
-        }
-
-        .glow-pulse {
-          background: radial-gradient(circle at 50% 50%, var(--glow-colors));
-          animation-name: glow-pulse;
-        }
-
-        .glow-flowHorizontal {
-          background: linear-gradient(90deg, var(--glow-colors));
-          animation-name: glow-flow;
-        }
-
-        .glow-static {
-          background: linear-gradient(90deg, var(--glow-colors));
-        }
-
-        @keyframes glow-rotate {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        @keyframes glow-pulse {
-          0%,
-          100% {
-            opacity: 0.42;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.78;
-            transform: scale(1.08);
-          }
-        }
-
-        @keyframes glow-flow {
-          0%,
-          100% {
-            transform: translateX(-4%);
-          }
-          50% {
-            transform: translateX(4%);
-          }
-        }
-
-        @keyframes loading-bar {
-          0% {
-            transform: translateX(-100%);
-          }
-          50% {
-            transform: translateX(25%);
-          }
-          100% {
-            transform: translateX(140%);
-          }
-        }
-
-        .animate-loading {
-          animation: loading-bar 1.8s ease-in-out infinite;
-        }
-
-        @media (max-width: 980px) {
-          .landing-nav {
-            height: 76px;
-            padding: 0 22px;
-          }
-
-          .hero-layout {
-            width: min(100% - 36px, 720px);
-            min-height: auto;
-            padding: 116px 0 80px;
-            grid-template-columns: 1fr;
-            align-items: start;
-            gap: 48px;
-          }
-
-          .hero-copy {
-            min-height: auto;
-            gap: 40px;
-          }
-
-          .hero-title {
-            font-size: clamp(56px, 16vw, 92px);
-          }
-
-          .hero-deck {
-            max-width: none;
-            justify-self: stretch;
-          }
-
-          .landing-section {
-            padding: 88px 22px;
-          }
-
-          .features-section {
-            padding: 12px 22px 88px;
-          }
-
-          .features-grid,
-          .productivity-grid,
-          .knowledge-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .knowledge-grid {
-            gap: 48px;
-          }
-
-          .knowledge-visual {
-            min-height: 360px;
-          }
-
-          .section-title {
-            font-size: clamp(48px, 13vw, 76px);
-          }
-
-          .cta-container {
-            align-items: start;
-            flex-direction: column;
-          }
-        }
-
-        @media (max-width: 640px) {
-          .landing-nav {
-            padding: 0 16px;
-          }
-
-          .landing-nav > div {
-            display: none;
-          }
-
-          .hero-layout {
-            width: min(100% - 28px, 420px);
-            padding-top: 104px;
-          }
-
-          .hero-title {
-            font-size: clamp(48px, 18vw, 72px);
-          }
-
-          .hero-subtitle {
-            max-width: 340px;
-            font-size: 10px;
-            letter-spacing: 0.2em;
-          }
-
-          .section-copy {
-            font-size: 15px;
-          }
-
-          .product-frame {
-            margin-top: 48px;
-          }
-
-          .knowledge-visual > div:nth-child(2) {
-            left: 18px;
-            right: 18px;
-            width: auto;
-          }
-
-          .cta-title {
-            font-size: clamp(46px, 16vw, 68px);
-          }
-        }
-      `}</style>
     </main>
   );
 }
