@@ -66,8 +66,9 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
             {/* Metric 1 */}
-            <div className="glass-panel p-6 rounded-2xl sunburst-glow">
-              <div className="text-xs font-semibold text-ash uppercase tracking-wider mb-2">Total Monthly Revenue</div>
+            <div className="glass-panel p-6 rounded-2xl relative overflow-hidden bg-[#0c0c0e]/80 border border-white/5 hover:border-white/10 transition-all">
+              <div className="absolute -right-6 -top-6 w-24 h-24 bg-[#ff8964]/10 rounded-full blur-xl pointer-events-none" />
+              <div className="text-xs font-semibold text-ash uppercase tracking-wider mb-2 font-mono">Total Monthly Revenue</div>
               <div className="text-3xl font-extrabold">{dashboardData.metrics?.revenue}</div>
               <div className="text-xs text-emerald-400 mt-2 flex items-center gap-1 font-medium">
                 {dashboardData.metrics?.revenueGrowth}
@@ -75,8 +76,9 @@ export default function DashboardPage() {
             </div>
 
             {/* Metric 2 */}
-            <div className="glass-panel p-6 rounded-2xl electric-glow">
-              <div className="text-xs font-semibold text-ash uppercase tracking-wider mb-2">Active CRM Pipeline</div>
+            <div className="glass-panel p-6 rounded-2xl relative overflow-hidden bg-[#0c0c0e]/80 border border-white/5 hover:border-white/10 transition-all">
+              <div className="absolute -right-6 -top-6 w-24 h-24 bg-[#5683da]/10 rounded-full blur-xl pointer-events-none" />
+              <div className="text-xs font-semibold text-ash uppercase tracking-wider mb-2 font-mono">Active CRM Pipeline</div>
               <div className="text-3xl font-extrabold">$842,500</div>
               <div className="text-xs text-emerald-400 mt-2 flex items-center gap-1 font-medium">
                 Weighted: $512,000
@@ -84,8 +86,9 @@ export default function DashboardPage() {
             </div>
 
             {/* Metric 3 */}
-            <div className="glass-panel p-6 rounded-2xl">
-              <div className="text-xs font-semibold text-ash uppercase tracking-wider mb-2">System Health / Anomalies</div>
+            <div className="glass-panel p-6 rounded-2xl relative overflow-hidden bg-[#0c0c0e]/80 border border-white/5 hover:border-white/10 transition-all">
+              <div className="absolute -right-6 -top-6 w-24 h-24 bg-red-500/10 rounded-full blur-xl pointer-events-none" />
+              <div className="text-xs font-semibold text-ash uppercase tracking-wider mb-2 font-mono">System Health / Anomalies</div>
               <div className="text-3xl font-extrabold">{dashboardData.metrics?.anomalyAlerts} Alert</div>
               <div className="text-xs text-ember-pulse mt-2 flex items-center gap-1 font-medium">
                 1 budget deviation detected
