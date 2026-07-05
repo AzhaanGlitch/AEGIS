@@ -104,7 +104,7 @@ function InteractiveNebulaShader({
             ? vec3(0.05, 0.05, 0.05) + vec3(3.0, 3.0, 3.0) * f 
             : hasUpcomingReminders
             ? vec3(0.03, 0.03, 0.03) + vec3(1.5, 1.5, 1.5) * f 
-            : vec3(0.01, 0.01, 0.01) + vec3(0.8, 0.8, 0.8) * f
+            : vec3(0.01, 0.01, 0.01) + vec3(0.8, 0.8, 0.8) * f;
 
           col = col * base + smoothstep(2.5, 0.0, rz) * 0.7 * base;
           d += min(rz, 1.0);
@@ -235,7 +235,7 @@ const commandCells = [
 
 const syncFeatures = [
   {
-    icon: Workflow, // Fallback if GitBranch missing
+    icon: Workflow, 
     title: "Bidirectional memory sync",
     text: "Keep documents, chat decisions, and workflow outputs synchronized across every agent.",
   },
