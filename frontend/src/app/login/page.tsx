@@ -46,7 +46,7 @@ export default function LoginPage() {
         />
         
         {/* Login Card */}
-        <div className="relative z-10 w-full bg-[#0c0c0e]/95 border border-white/10 rounded-2xl px-10 py-14 shadow-2xl backdrop-blur-md">
+        <div className="relative z-10 w-full bg-black/90 border border-white/10 rounded-2xl px-10 py-14 shadow-2xl backdrop-blur-md">
           
           {/* Back Button inside the card */}
           <button
