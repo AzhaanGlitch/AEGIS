@@ -25,6 +25,37 @@ interface AgentMetadata {
   preferred_model_tier: string;
 }
 
+const SAMPLE_PROMPTS: Record<string, string> = {
+  architect: "Design a high-throughput microservices architecture for real-time stock trading with WebSockets and Redis.",
+  code_reviewer: "Audit this Python code for security issues and memory leaks: \ndef process(data): return eval(data)",
+  coder: "Write a TypeScript function that implements LRU cache with O(1) time complexity.",
+  debugger: "Diagnose this error: KeyError: 'user_id' in auth_middleware.py line 42 when processing JWT payload.",
+  devops: "Generate a multi-stage Dockerfile and GitHub Actions workflow for a Next.js frontend with production caching.",
+  test_engineer: "Generate PyTest unit tests with edge cases for a user registration function including password hashing.",
+  ops: "Create Grafana alert thresholds and an incident response runbook for HTTP 504 Gateway Timeouts exceeding 5%.",
+  langchain_reviewer: "Audit this LangChain RetrievalQA pipeline for token efficiency and memory retention bottlenecks.",
+  hello_world: "Run a sub-second ping test to check provider latency and API connection health.",
+  orchestrator: "Classify this task and route it to the best agent: 'Build a lead qualification script for our B2B sales team.'",
+  planner: "Create a 4-week Agile sprint roadmap with epics and user stories for launching an AI analytics dashboard.",
+  meeting_assistant: "Summarize these meeting notes and extract action items: 'Discussed Q3 budget, Sarah will update spreadsheet by Friday.'",
+  customer_support: "Draft an empathetic response to a user complaining about a 10-minute API downtime during maintenance.",
+  sales_assistant: "Draft a personalized 3-touch cold email outreach sequence for selling enterprise AI software to CTOs.",
+  hr_recruiter: "Generate a Senior Full-Stack Engineer job description and 5 interview screening questions for React and Python.",
+  legal: "Review this NDA clause for potential liability risks: 'Recipient shall indemnify Disclosing Party for all indirect damages.'",
+  marketing: "Create a 1-week LinkedIn campaign strategy with 3 post copy variations for an AI developer tool launch.",
+  finance: "Analyze this monthly budget summary and highlight anomalies: Revenue $150k, Server Costs $45k (vs $12k avg).",
+  doc_writer: "Write a comprehensive Markdown README and API documentation for a FastAPI authentication endpoint.",
+  writer: "Write an engaging 500-word blog article explaining the benefits of multi-agent LLM orchestration for enterprise.",
+  email_assistant: "Draft an executive follow-up email to stakeholders summarizing the success of our multi-agent architecture release.",
+  translator: "Translate this technical release note into Spanish and French preserving developer terminology: 'Zero-downtime deployment completed.'",
+  travel_planner: "Build a 3-day business travel itinerary for Tokyo including budget breakdown, hotels near Shibuya, and transit tips.",
+  health_tracker: "Create a 7-day high-protein meal plan and workout routine for an engineer working 8 hours at a desk.",
+  home_automation: "Write a Home Assistant YAML automation script that turns on office lights at 8 AM and sets temperature to 72°F.",
+  analyzer: "Deconstruct this dataset of customer feedback to extract core skill requirements for automated support routing.",
+  comparator: "Compare the pros and cons of Groq Llama 3.3 vs NVIDIA NIM Llama 3.1 for low-latency coding tasks.",
+  grader: "Evaluate this code sample against a strict quality rubric (0-100) and provide refactoring suggestions."
+};
+
 export const AgentOrchestratorDashboard: React.FC = () => {
   const [agents, setAgents] = useState<AgentMetadata[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -289,17 +320,32 @@ export const AgentOrchestratorDashboard: React.FC = () => {
                 <h3 className="font-bold text-slate-100 text-base mb-1">{agent.name}</h3>
                 <p className="text-xs text-indigo-400 font-medium mb-3">{agent.role}</p>
                 <p className="text-xs text-slate-400 leading-relaxed mb-4">{agent.description}</p>
-                <div className="flex items-center justify-between text-[11px] pt-4 border-t border-slate-800/80 text-slate-500">
-                  <span>{agent.category}</span>
-                  {isSelected ? (
-                    <span className="text-indigo-400 font-semibold flex items-center gap-1">
-                      <CheckCircle size={12} /> Selected
-                    </span>
-                  ) : (
-                    <span className="text-slate-400 hover:text-indigo-400 transition-colors">
-                      Select Agent →
-                    </span>
-                  )}
+                <div className="flex flex-col gap-2 pt-3 border-t border-slate-800/80">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <span>{agent.category}</span>
+                    {isSelected ? (
+                      <span className="text-indigo-400 font-semibold flex items-center gap-1">
+                        <CheckCircle size={12} /> Target Selected
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 group-hover:text-indigo-400 transition-colors">
+                        Select Agent →
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedAgent(agent);
+                      const samplePrompt = SAMPLE_PROMPTS[agent.agent_id] || `Run a test benchmark task for ${agent.name}.`;
+                      setPromptInput(samplePrompt);
+                    }}
+                    className="w-full py-1.5 px-3 bg-indigo-950/40 hover:bg-indigo-600/30 border border-indigo-500/20 text-indigo-300 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <Sparkles size={12} />
+                    <span>Auto-Fill Test Prompt</span>
+                  </button>
                 </div>
               </div>
             );
