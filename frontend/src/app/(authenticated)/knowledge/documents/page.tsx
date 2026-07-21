@@ -6,7 +6,7 @@ import Header from "@/components/Header";
 import { FileUp, CheckCircle } from "lucide-react";
 
 export default function DocumentsPage() {
-  const { documents, addDocument } = useApp();
+  const { documents, addDocument, fetchDocuments } = useApp();
   const [files, setFiles] = useState<File[]>([]);
   const [uploadingState, setUploadingState] = useState<"idle" | "uploading" | "indexing" | "completed">("idle");
   const [indexingPct, setIndexingPct] = useState(0);
@@ -20,7 +20,28 @@ export default function DocumentsPage() {
       setUploadingState("indexing");
       setIndexingPct(10);
       setIndexingLogs(["Uploading to server..."]);
-      addDocument(droppedFiles[0].name, `${(droppedFiles[0].size / 1024).toFixed(1)} KB`);
+      
+      const file = droppedFiles[0];
+      const formData = new FormData();
+      formData.append("file", file);
+
+      // Real backend upload call
+      fetch("http://localhost:8000/api/v1/ingest/upload", {
+        method: "POST",
+        body: formData,
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Upload failed");
+        return res.json();
+      })
+      .then(() => {
+        fetchDocuments();
+      })
+      .catch(err => {
+        console.error("Backend ingestion error:", err);
+      });
+
+      addDocument(file.name, `${(file.size / 1024).toFixed(1)} KB`);
 
       const interval = setInterval(() => {
         setIndexingPct(prev => {

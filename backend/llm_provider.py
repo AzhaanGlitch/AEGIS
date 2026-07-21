@@ -288,3 +288,37 @@ def _mock_response(messages: list[dict]) -> str:
             "Hello! I am the AEGIS AI assistant. I can assist with forecasts, CRM updates, campaign evaluations, "
             "policy guides, and visual workflows. What would you like to explore?"
         )
+
+
+async def get_huggingface_embedding(text: str) -> list[float]:
+    """Generate a 384-dimension embedding using Hugging Face inference API."""
+    if not settings.HF_API_KEY:
+        # Fallback: deterministic vector based on text hash
+        import hashlib
+        import random
+        random.seed(int(hashlib.md5(text.encode("utf-8")).hexdigest(), 16))
+        return [random.uniform(-1, 1) for _ in range(384)]
+
+    url = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2"
+    headers = {"Authorization": f"Bearer {settings.HF_API_KEY}"}
+    payload = {"inputs": text, "options": {"wait_for_model": True}}
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(url, headers=headers, json=payload)
+            if resp.status_code == 200:
+                emb = resp.json()
+                if isinstance(emb, list) and len(emb) > 0:
+                    if isinstance(emb[0], list): # Sometimes returns a nested list
+                        return emb[0]
+                    return emb
+            logger.warning("HF Embeddings API status %d, fallback to deterministic mock.", resp.status_code)
+    except Exception as e:
+        logger.error("Hugging Face embedding call failed: %s", e)
+
+    # Fallback
+    import hashlib
+    import random
+    random.seed(int(hashlib.md5(text.encode("utf-8")).hexdigest(), 16))
+    return [random.uniform(-1, 1) for _ in range(384)]
+

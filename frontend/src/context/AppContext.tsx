@@ -7,12 +7,13 @@ export type Role = "Founder" | "Sales Mgr" | "Marketing Mgr" | "HR" | "Finance" 
 interface User {
   email: string;
   role: Role;
+  name: string;
   organization: string;
 }
 
 interface AppContextType {
   user: User | null;
-  login: (email: string, role: Role) => void;
+  login: (email: string, role: Role, name?: string) => void;
   logout: () => void;
   currentRole: Role;
   setCurrentRole: (role: Role) => void;
@@ -21,6 +22,7 @@ interface AppContextType {
   documents: Array<{ id: string; name: string; size: string; status: string; progress: number }>;
   addDocument: (name: string, size: string) => void;
   updateDocStatus: (id: string, status: string, progress: number) => void;
+  fetchDocuments: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -35,7 +37,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     { id: "3", name: "AEGIS_TRD.pdf", size: "511 KB", status: "Indexed", progress: 100 }
   ]);
 
-  // Load from local storage on mount
+  const fetchDocuments = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/v1/ingest/documents");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.documents) {
+          const formatted = data.documents.map((d: any) => ({
+            id: d.id,
+            name: d.name,
+            size: d.size || "15 KB",
+            status: d.status === "indexed" ? "Indexed" : d.status,
+            progress: d.status === "indexed" ? 100 : 0
+          }));
+          setDocuments(formatted);
+        }
+      }
+    } catch (e) {
+      console.log("Failed to fetch documents from backend", e);
+    }
+  };
+
+  // Load from local storage and fetch documents on mount
   useEffect(() => {
     const savedUser = localStorage.getItem("aegis_user");
     if (savedUser) {
@@ -43,10 +66,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setUser(parsed);
       setCurrentRole(parsed.role);
     }
+    fetchDocuments();
   }, []);
 
-  const login = (email: string, role: Role) => {
-    const newUser = { email, role, organization: "Acme Enterprise Corp" };
+  const login = (email: string, role: Role, name?: string) => {
+    const newUser = { 
+      email, 
+      role, 
+      name: name || email.split("@")[0], 
+      organization: "Acme Enterprise Corp" 
+    };
     setUser(newUser);
     setCurrentRole(role);
     localStorage.setItem("aegis_user", JSON.stringify(newUser));
@@ -87,7 +116,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setCurrentTab,
         documents,
         addDocument,
-        updateDocStatus
+        updateDocStatus,
+        fetchDocuments
       }}
     >
       {children}

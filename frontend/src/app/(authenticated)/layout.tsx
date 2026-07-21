@@ -13,7 +13,8 @@ import {
   FileText,
   HelpCircle,
   Settings, 
-  LogOut 
+  LogOut,
+  MessageSquare
 } from "lucide-react";
 
 // Communication context to map state directly down to page tabs
@@ -50,6 +51,7 @@ export default function AuthenticatedLayout({
 
   const menuItems = [
     { icon: LayoutDashboard, name: "Dashboard" },
+    { icon: MessageSquare, name: "Workspace Chat" },
     { icon: Layers, name: "Agent Mesh" },
     { icon: Workflow, name: "Workflows" },
     { icon: Database, name: "Knowledge Base" },

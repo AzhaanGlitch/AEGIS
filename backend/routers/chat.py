@@ -35,12 +35,32 @@ async def websocket_chat_endpoint(websocket: WebSocket):
             target_agent = get_agent(routed_agent_name)
             await websocket.send_json({
                 "type": "status",
-                "data": {"state": "Orchestrating", "msg": f"[{target_agent.name}] Generating response using free LLM tier..."}
+                "data": {"state": "Orchestrating", "msg": f"[{target_agent.name}] Performing semantic search & generating response..."}
             })
             await asyncio.sleep(0.4)
 
+            # Search Qdrant for context
+            context_str = ""
+            citations = []
+            try:
+                from llm_provider import get_huggingface_embedding
+                from qdrant_service import semantic_search
+                query_vector = await get_huggingface_embedding(query)
+                search_results = await semantic_search(query_vector, top_k=3)
+                if search_results:
+                    context_chunks = []
+                    for idx, hit in enumerate(search_results):
+                        context_chunks.append(f"[Source: {hit['source']}]\n{hit['text']}")
+                        citations.append({
+                            "name": f"{hit['source']}",
+                            "link": f"file:///Users/yashgoyal/Documents/AEGIS/{hit['source']}"
+                        })
+                    context_str = "\n\n".join(context_chunks)
+            except Exception as se_err:
+                logger.error("Failed to fetch context from Qdrant: %s", se_err)
+
             # 3. Compile messages from the agent prompt guides
-            messages = target_agent._build_messages(query, context="")
+            messages = target_agent._build_messages(query, context=context_str)
 
             # Stream tokens
             async for token in stream_chat_completion(messages=messages, model_tier=target_agent.model_tier):
@@ -49,9 +69,8 @@ async def websocket_chat_endpoint(websocket: WebSocket):
             # Send final completions with sources
             await websocket.send_json({
                 "type": "done",
-                "citations": [
+                "citations": citations if citations else [
                     {"name": "AEGIS PRD Specs", "link": "file:///Users/yashgoyal/Documents/AEGIS/AEGIS_PRD.md"},
-                    {"name": "Knowledge Graph", "link": "file:///Users/yashgoyal/Documents/AEGIS/extracted_text.txt"}
                 ]
             })
 
