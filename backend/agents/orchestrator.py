@@ -89,85 +89,99 @@ class OrchestratorAgent(BaseAgent):
         ]
 
     async def classify_and_route(self, user_input: str) -> Dict[str, Any]:
-        """Classify user query and select the target agent ID."""
+        """Classify user query and select 1 or more relevant agents to execute concurrently."""
         agent_options = [
             f"- {id}: {a.name} ({a.category}) - {a.description}"
             for id, a in self.registry.items()
+            if id != "orchestrator"
         ]
         options_text = "\n".join(agent_options)
 
-        prompt = f"""Given the following user task, select the SINGLE best agent to handle it.
+        prompt = f"""Given the following user prompt, analyze what tasks need to be performed and select 1 to 3 relevant agents that should work on it (either sequentially or simultaneously).
 
 Available Agents:
 {options_text}
 
-Task: "{user_input}"
+User Prompt: "{user_input}"
 
 Respond ONLY with valid JSON in this exact structure:
 {{
-  "selected_agent_id": "<agent_id>",
-  "reasoning": "<short explanation of why this agent was chosen>",
-  "confidence": 0.95
+  "execution_plan": "Short strategy of how the selected agents will solve this",
+  "selected_agents": [
+    {{
+      "agent_id": "<agent_id>",
+      "subtask": "<specific task description for this agent>"
+    }}
+  ]
 }}
 """
         messages = [
-            {"role": "system", "content": "You are a master router system. Return strictly JSON."},
+            {"role": "system", "content": "You are the Master Orchestrator system. Return strictly JSON."},
             {"role": "user", "content": prompt}
         ]
 
         try:
-            res = await query_llm_json(messages=messages, tier="fast")
-            target_id = res.get("selected_agent_id", "coder")
-            if target_id not in self.registry:
-                target_id = "coder"
+            res = await query_llm_json(messages=messages, tier="smart")
+            selected_agents = res.get("selected_agents", [])
+            valid_agents = []
+            for item in selected_agents:
+                aid = item.get("agent_id")
+                if aid in self.registry and aid != "orchestrator":
+                    valid_agents.append({
+                        "agent_id": aid,
+                        "subtask": item.get("subtask", user_input)
+                    })
+            if not valid_agents:
+                valid_agents = [{"agent_id": "coder", "subtask": user_input}]
             return {
-                "target_agent_id": target_id,
-                "reasoning": res.get("reasoning", "Routed based on task semantics."),
-                "confidence": res.get("confidence", 0.9)
+                "execution_plan": res.get("execution_plan", "Delegating task to specialized agents."),
+                "selected_agents": valid_agents
             }
         except Exception as e:
-            logger.warning(f"Classification failed: {e}. Defaulting to 'coder'.")
+            logger.warning(f"Multi-agent classification failed: {e}. Defaulting to 'coder'.")
             return {
-                "target_agent_id": "coder",
-                "reasoning": "Fallback routing due to classification error.",
-                "confidence": 0.5
+                "execution_plan": "Fallback execution using Coder Agent.",
+                "selected_agents": [{"agent_id": "coder", "subtask": user_input}]
             }
 
     async def orchestrate(self, user_input: str, target_agent_id: Optional[str] = None, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Route input to specified or auto-classified agent and return result."""
+        """Route input, execute selected agents simultaneously using asyncio.gather, and return aggregated flow."""
+        import asyncio
         active_providers = get_available_providers()
 
-        if not target_agent_id or target_agent_id not in self.registry:
-            routing_info = await self.classify_and_route(user_input)
-            target_agent_id = routing_info["target_agent_id"]
-            reasoning = routing_info["reasoning"]
-        else:
-            reasoning = f"Directly invoked target agent '{target_agent_id}'."
-
-        agent = self.registry[target_agent_id]
-        
-        # Don't recurse if orchestrator targets orchestrator
-        if target_agent_id == "orchestrator":
-            agent_result = {
-                "agent_id": "orchestrator",
-                "agent_name": self.name,
-                "status": "success",
-                "content": f"Orchestrator ready. System has 27 active agents across Core Engineering, Planning, Business, Specialized, and Skill-Creator categories.\n\nConfigured LLM providers (excluding Gemini): {[p['name'] for p in active_providers]}."
+        if target_agent_id and target_agent_id in self.registry and target_agent_id != "orchestrator":
+            plan_info = {
+                "execution_plan": f"Direct execution override requested for agent '{target_agent_id}'.",
+                "selected_agents": [{"agent_id": target_agent_id, "subtask": user_input}]
             }
         else:
-            agent_result = await agent.run(user_input, context=context)
+            plan_info = await self.classify_and_route(user_input)
+
+        selected_tasks = plan_info["selected_agents"]
+
+        # Run selected agents simultaneously using asyncio.gather
+        async def run_subagent(item: Dict[str, str]):
+            aid = item["agent_id"]
+            subtask = item["subtask"]
+            agent_obj = self.registry[aid]
+            res = await agent_obj.run(subtask, context=context)
+            return {
+                "agent_id": aid,
+                "agent_name": agent_obj.name,
+                "role": agent_obj.role,
+                "category": agent_obj.category,
+                "subtask": subtask,
+                "result": res
+            }
+
+        agent_results = await asyncio.gather(*[run_subagent(item) for item in selected_tasks])
 
         return {
             "orchestrator_summary": {
                 "user_input": user_input,
-                "selected_agent": {
-                    "agent_id": agent.agent_id,
-                    "name": agent.name,
-                    "role": agent.role,
-                    "category": agent.category
-                },
-                "routing_reasoning": reasoning,
+                "execution_plan": plan_info["execution_plan"],
+                "total_agents_assigned": len(agent_results),
                 "available_providers": [p["name"] for p in active_providers],
             },
-            "agent_response": agent_result
+            "agent_executions": list(agent_results)
         }

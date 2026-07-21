@@ -212,146 +212,93 @@ export const AgentOrchestratorDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Orchestrator Output Section */}
+      {/* Orchestrator Output Section - Multi-Agent Concurrent Flow */}
       {orchestratorResult && (
         <div className="max-w-7xl mx-auto mb-12 space-y-6">
-          {/* Routing Decision Banner */}
-          <div className="bg-slate-900 border border-indigo-500/30 p-6 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div className="text-xs text-indigo-400 font-semibold uppercase tracking-wider mb-1">
-                Orchestrator Routing Result
+          {/* Master Plan Header */}
+          <div className="bg-gradient-to-r from-slate-900 via-indigo-950/60 to-slate-900 border border-indigo-500/40 p-6 rounded-2xl shadow-2xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="inline-flex items-center gap-2 text-xs font-bold text-indigo-400 uppercase tracking-wider bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
+                <Sparkles size={14} />
+                <span>Master Orchestrator Plan</span>
               </div>
-              <div className="text-lg font-bold text-white flex items-center gap-2">
-                <span>Selected Agent:</span>
-                <span className="text-indigo-400">{orchestratorResult.orchestrator_summary?.selected_agent?.name}</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                  {orchestratorResult.orchestrator_summary?.selected_agent?.category}
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-1">
-                Reasoning: {orchestratorResult.orchestrator_summary?.routing_reasoning}
-              </p>
-            </div>
-          </div>
-
-          {/* Agent Response Rendering */}
-          {orchestratorResult.agent_response?.data ? (
-            <AgentDataTable
-              title={`${orchestratorResult.orchestrator_summary?.selected_agent?.name} Output`}
-              agentName={orchestratorResult.orchestrator_summary?.selected_agent?.name || "Agent"}
-              data={orchestratorResult.agent_response.data}
-            />
-          ) : (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-              <h3 className="font-semibold text-slate-200 flex items-center gap-2">
-                <Bot className="text-indigo-400" size={18} />
-                <span>Response Output</span>
-              </h3>
-              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl font-mono text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">
-                {orchestratorResult.agent_response?.content || JSON.stringify(orchestratorResult, null, 2)}
+              <div className="text-xs text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-3 py-1 rounded-full font-mono flex items-center gap-1.5">
+                <Zap size={14} />
+                <span>{orchestratorResult.orchestrator_summary?.total_agents_assigned} Agents Running Simultaneously</span>
               </div>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Agents Registry Section */}
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-white">27-Agent Registry</h2>
-            <p className="text-xs text-slate-400">Click any agent card to target it directly for your next prompt.</p>
+            
+            <h3 className="text-xl font-extrabold text-white">
+              {orchestratorResult.orchestrator_summary?.execution_plan}
+            </h3>
+            <p className="text-xs text-slate-400">
+              User Prompt: <span className="text-slate-200 italic">"{orchestratorResult.orchestrator_summary?.user_input}"</span>
+            </p>
           </div>
 
-          {/* Filter and Search Controls */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-3 text-slate-500" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search agents..."
-                className="bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
-              />
-            </div>
-          </div>
-        </div>
+          {/* Concurrent Agents Execution Flow */}
+          <div className="space-y-6">
+            <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2">
+              <Bot className="text-indigo-400" size={20} />
+              <span>Active Agent Pipeline Executions</span>
+            </h3>
 
-        {/* Category Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-                selectedCategory === cat
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-                  : "bg-slate-900 border border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+            {orchestratorResult.agent_executions?.map((exec: any, idx: number) => {
+              const resObj = exec.result;
+              return (
+                <div
+                  key={idx}
+                  className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl transition-all"
+                >
+                  {/* Agent Card Header */}
+                  <div className="px-6 py-4 bg-slate-950 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold text-sm">
+                        #{idx + 1}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-slate-100 text-base">{exec.agent_name}</h4>
+                          <span className="text-[10px] uppercase font-semibold px-2.5 py-0.5 rounded-full bg-slate-800 text-indigo-300 border border-indigo-500/20">
+                            {exec.category}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400">{exec.role}</p>
+                      </div>
+                    </div>
 
-        {/* Agents Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAgents.map((agent) => {
-            const isSelected = selectedAgent?.agent_id === agent.agent_id;
-            return (
-              <div
-                key={agent.agent_id}
-                onClick={() => setSelectedAgent(agent)}
-                className={`p-6 rounded-2xl cursor-pointer transition-all border ${
-                  isSelected
-                    ? "bg-indigo-950/40 border-indigo-500 shadow-xl shadow-indigo-500/10"
-                    : "bg-slate-900/80 border-slate-800 hover:border-slate-700 hover:bg-slate-900"
-                }`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-                    <Bot size={20} />
+                    <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-3 py-1 rounded-full font-mono">
+                      <CheckCircle size={13} />
+                      <span>Execution Complete</span>
+                    </div>
                   </div>
-                  <span className="text-[10px] uppercase font-bold px-2.5 py-1 rounded-full bg-slate-950 text-slate-400 border border-slate-800">
-                    {agent.preferred_model_tier} tier
-                  </span>
-                </div>
-                <h3 className="font-bold text-slate-100 text-base mb-1">{agent.name}</h3>
-                <p className="text-xs text-indigo-400 font-medium mb-3">{agent.role}</p>
-                <p className="text-xs text-slate-400 leading-relaxed mb-4">{agent.description}</p>
-                <div className="flex flex-col gap-2 pt-3 border-t border-slate-800/80">
-                  <div className="flex items-center justify-between text-[11px] text-slate-500">
-                    <span>{agent.category}</span>
-                    {isSelected ? (
-                      <span className="text-indigo-400 font-semibold flex items-center gap-1">
-                        <CheckCircle size={12} /> Target Selected
-                      </span>
+
+                  {/* Subtask Assigned */}
+                  <div className="p-4 bg-slate-950/50 border-b border-slate-800/60 text-xs text-slate-300">
+                    <strong className="text-indigo-400 font-mono">Assigned Subtask: </strong>
+                    <span>{exec.subtask}</span>
+                  </div>
+
+                  {/* Output Display */}
+                  <div className="p-6">
+                    {resObj?.data ? (
+                      <AgentDataTable
+                        title={`${exec.agent_name} Structured Output`}
+                        agentName={exec.agent_name}
+                        data={resObj.data}
+                      />
                     ) : (
-                      <span className="text-slate-400 group-hover:text-indigo-400 transition-colors">
-                        Select Agent →
-                      </span>
+                      <div className="bg-slate-950 border border-slate-800/80 rounded-xl p-4 font-mono text-sm text-slate-200 whitespace-pre-wrap leading-relaxed overflow-x-auto">
+                        {resObj?.content || JSON.stringify(resObj, null, 2)}
+                      </div>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedAgent(agent);
-                      const samplePrompt = SAMPLE_PROMPTS[agent.agent_id] || `Run a test benchmark task for ${agent.name}.`;
-                      setPromptInput(samplePrompt);
-                    }}
-                    className="w-full py-1.5 px-3 bg-indigo-950/40 hover:bg-indigo-600/30 border border-indigo-500/20 text-indigo-300 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
-                  >
-                    <Sparkles size={12} />
-                    <span>Auto-Fill Test Prompt</span>
-                  </button>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
