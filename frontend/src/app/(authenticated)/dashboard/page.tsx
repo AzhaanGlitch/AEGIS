@@ -26,6 +26,7 @@ import {
   Loader2,
   Brain
 } from "lucide-react";
+import { AgentOrchestratorDashboard } from "@/components/agents/AgentOrchestratorDashboard";
 
 const renderMarkdown = (text: string) => {
   if (!text) return "";
@@ -507,33 +508,10 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 2. AGENT MESH PANEL */}
+      {/* 2. AGENT MESH PANEL (27-Agent Orchestrator Suite) */}
       {activeView === "Agent Mesh" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-200">
-          {[
-            { name: "Executive Core Agent", role: "CEO Operations Strategy", status: "Online", performance: "99.8%" },
-            { name: "Sales Outreach Agent", role: "Pipeline Conversion Leads", status: "Idle", performance: "94.2%" },
-            { name: "Financial Analyzer Node", role: "Risk and Ledger Yield", status: "Online", performance: "100%" },
-          ].map((agent, index) => (
-            <div key={index} className="bg-[#09090b]/30 border border-white/[0.04] rounded-xl p-6 backdrop-blur-md">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-                  <Layers className="w-4 h-4 text-slate-400" />
-                </div>
-                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
-                  agent.status === "Online" ? "bg-[#3ee7c4]/10 text-[#3ee7c4] border-[#3ee7c4]/20" : "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                }`}>
-                  {agent.status}
-                </span>
-              </div>
-              <h3 className="text-sm font-semibold text-white mb-0.5">{agent.name}</h3>
-              <p className="text-xs text-slate-500 font-mono mb-4">{agent.role}</p>
-              <div className="border-t border-white/[0.03] pt-3 flex justify-between text-[11px] font-mono">
-                <span className="text-slate-500">Efficiency</span>
-                <span className="text-white font-medium">{agent.performance}</span>
-              </div>
-            </div>
-          ))}
+        <div className="animate-in fade-in duration-200">
+          <AgentOrchestratorDashboard />
         </div>
       )}
 
