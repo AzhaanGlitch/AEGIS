@@ -143,6 +143,29 @@ async def chat_completion(
     return _mock_response(messages)
 
 
+async def query_llm(messages: List[Dict[str, str]], tier: str = "smart", temperature: float = 0.7) -> str:
+    """Convenience alias for chat_completion."""
+    return await chat_completion(messages=messages, model_tier=tier, temperature=temperature)
+
+
+async def query_llm_json(messages: List[Dict[str, str]], tier: str = "smart") -> Dict[str, Any]:
+    """Convenience alias to return parsed JSON response from LLM."""
+    raw = await chat_completion(messages=messages, model_tier=tier, temperature=0.2)
+    # Strip markdown codeblocks if present
+    cleaned = raw.strip()
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[7:]
+    if cleaned.startswith("```"):
+        cleaned = cleaned[3:]
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    cleaned = cleaned.strip()
+    try:
+        return json.loads(cleaned)
+    except Exception:
+        return {"response": raw}
+
+
 async def _openai_compatible_completion(
     base_url: str,
     api_key: str,

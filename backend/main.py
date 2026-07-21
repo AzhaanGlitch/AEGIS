@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from llm_provider import get_provider_info
-from routers import auth, ingest, dashboard, chat, notifications, payments
+from routers import auth, ingest, dashboard, chat, notifications, payments, agents
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("AEGIS_Backend")
@@ -44,3 +44,4 @@ app.include_router(dashboard.router,     prefix=settings.API_V1_STR)
 app.include_router(chat.router,          prefix=settings.API_V1_STR)
 app.include_router(notifications.router, prefix=settings.API_V1_STR)
 app.include_router(payments.router,      prefix=settings.API_V1_STR)
+app.include_router(agents.router,        prefix=settings.API_V1_STR)
