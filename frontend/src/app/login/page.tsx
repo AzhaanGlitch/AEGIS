@@ -9,10 +9,10 @@ import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import Image from "next/image";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCEm7CuKNn5n3vGSW9t6Qs8342ORDpc8ts",
-  authDomain: "aegis-ce95a.firebaseapp.com",
-  projectId: "aegis-ce95a",
-  storageBucket: "aegis-ce95a.firebasestorage.app",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
 };
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
