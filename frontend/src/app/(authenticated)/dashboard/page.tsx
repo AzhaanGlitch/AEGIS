@@ -266,37 +266,24 @@ export default function DashboardPage() {
   return (
     <div className="p-8 lg:p-10 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
       
-      {/* Upper Context Sub-links Menu Switcher Bar */}
-      <div className="flex flex-wrap gap-2 border-b border-white/[0.03] pb-4">
-        {navTabs.map((tab) => (
-          <button
-            key={tab.name}
-            onClick={() => setActiveView(tab.name)}
-            className={`px-4 py-2 text-[11px] font-mono uppercase tracking-wider rounded-lg border transition-all duration-150 cursor-pointer ${
-              activeView === tab.name
-                ? "bg-white/[0.05] text-white border-white/10 shadow-md"
-                : "text-slate-500 border-transparent hover:text-slate-300 hover:bg-white/[0.01]"
-            }`}
-          >
-            {tab.name}
-          </button>
-        ))}
-      </div>
 
-      {/* Title Segment Info */}
-      <div className="flex flex-col gap-1.5">
-        <h1 className="text-xl font-bold tracking-tight text-white font-sans flex items-center gap-2">
-          {activeView} <span className="text-xs font-mono font-normal text-slate-500">/ {currentRole} Security Access</span>
-        </h1>
-        {user && (
-          <p className="text-xs text-[#3ee7c4] font-mono">
-            Welcome back, {user.name} ({user.email})
+
+      {/* Title Segment Info (Hidden when in Agent Mesh mode for a clean look) */}
+      {activeView !== "Agent Mesh" && (
+        <div className="flex flex-col gap-1.5">
+          <h1 className="text-xl font-bold tracking-tight text-white font-sans flex items-center gap-2">
+            {activeView} <span className="text-xs font-mono font-normal text-slate-500">/ {currentRole} Security Access</span>
+          </h1>
+          {user && (
+            <p className="text-xs text-[#3ee7c4] font-mono">
+              Welcome back, {user.name} ({user.email})
+            </p>
+          )}
+          <p className="text-xs text-slate-500 font-mono uppercase tracking-wider">
+            {navTabs.find(t => t.name === activeView)?.desc}
           </p>
-        )}
-        <p className="text-xs text-slate-500 font-mono uppercase tracking-wider">
-          {navTabs.find(t => t.name === activeView)?.desc}
-        </p>
-      </div>
+        </div>
+      )}
 
       {/* Main Core Router Switcher Frame */}
       {activeView === "Dashboard" && (
@@ -344,7 +331,7 @@ export default function DashboardPage() {
                 <Terminal className="w-3.5 h-3.5 text-slate-500" /> Operational Logs Trace
               </h2>
               <div className="space-y-3.5">
-                {dashboardData.recentActivity.map((log, index) => (
+                {dashboardData.recentActivity.map((log: any, index: number) => (
                   <div key={index} className="flex gap-4 items-start p-3 bg-white/[0.01] border border-white/[0.03] rounded-lg text-xs">
                     <span className="text-[10px] font-mono text-slate-600 shrink-0 pt-0.5 w-20">{log.time}</span>
                     <p className="text-slate-400 leading-relaxed">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Cpu,
   Layers,
@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { AgentChatWidget } from "./AgentChatWidget";
 import { AgentDataTable } from "./AgentDataTable";
+import { useApp } from "@/context/AppContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface AgentMetadata {
   agent_id: string;
@@ -57,14 +59,19 @@ const SAMPLE_PROMPTS: Record<string, string> = {
 };
 
 export const AgentOrchestratorDashboard: React.FC = () => {
+  const { user } = useApp();
   const [agents, setAgents] = useState<AgentMetadata[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedAgent, setSelectedAgent] = useState<AgentMetadata | null>(null);
+  const [showRegistry, setShowRegistry] = useState<boolean>(false);
   
   const [promptInput, setPromptInput] = useState<string>("");
   const [orchestrating, setOrchestrating] = useState<boolean>(false);
   const [orchestratorResult, setOrchestratorResult] = useState<any>(null);
+
+  // Extract first name or display name dynamically
+  const userName = user?.name ? user.name.split(" ")[0] : "Operator";
 
   useEffect(() => {
     fetchAgents();
@@ -82,19 +89,74 @@ export const AgentOrchestratorDashboard: React.FC = () => {
     }
   };
 
-  const handleOrchestrate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!promptInput.trim() || orchestrating) return;
+  const [userHistory, setUserHistory] = useState<Array<{ id: string; query: string; timestamp: string }>>([]);
+
+  // User-specific chat history storage key
+  const storageKey = useMemo(() => {
+    return user?.email ? `aegis_prompts_${user.email.replace(/[^a-zA-Z0-9]/g, "_")}` : "aegis_prompts_guest";
+  }, [user]);
+
+  // Load history on mount or user change
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        try {
+          setUserHistory(JSON.parse(saved));
+        } catch (e) {}
+      } else {
+        setUserHistory([]);
+      }
+    }
+  }, [storageKey]);
+
+  const [processingStep, setProcessingStep] = useState<string>("");
+
+  const handleOrchestrate = async (e?: React.FormEvent, promptOverride?: string) => {
+    if (e) e.preventDefault();
+    const query = promptOverride || promptInput;
+    if (!query.trim() || orchestrating) return;
+
+    // Save prompt to user-specific history
+    const newEntry = {
+      id: Date.now().toString(),
+      query: query.trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    
+    setUserHistory(prev => {
+      const updated = [newEntry, ...prev.filter(item => item.query !== query.trim())].slice(0, 15);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      }
+      return updated;
+    });
 
     setOrchestrating(true);
     setOrchestratorResult(null);
+
+    const steps = [
+      "Analyzing query",
+      "Classifying intent",
+      selectedAgent ? `Assigning ${selectedAgent.name}` : "Selecting specialized agents",
+      "Generating solution"
+    ];
+
+    let sIdx = 0;
+    setProcessingStep(steps[0]);
+    const stepInterval = setInterval(() => {
+      sIdx++;
+      if (sIdx < steps.length) {
+        setProcessingStep(steps[sIdx]);
+      }
+    }, 700);
 
     try {
       const res = await fetch("http://localhost:8000/api/v1/agents/orchestrate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user_input: promptInput,
+          user_input: query,
           target_agent_id: selectedAgent?.agent_id || null,
         }),
       });
@@ -106,11 +168,13 @@ export const AgentOrchestratorDashboard: React.FC = () => {
     } catch (e) {
       console.error("Orchestration error:", e);
     } finally {
+      clearInterval(stepInterval);
       setOrchestrating(false);
+      setProcessingStep("");
     }
   };
 
-  const categories = ["All", "Core Engineering", "Planning & Management", "Business & Support", "Specialized / Utility", "Skill-Creator Suite"];
+  const categories = ["All", "Core Engineering", "Planning & Management", "Business & Support", "Specialized / Utility"];
 
   const filteredAgents = agents.filter((agent) => {
     const matchesCategory = selectedCategory === "All" || agent.category === selectedCategory;
@@ -120,176 +184,390 @@ export const AgentOrchestratorDashboard: React.FC = () => {
     return matchesCategory && matchesSearch;
   });
 
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10 font-sans">
-      {/* Header Banner */}
-      <div className="max-w-7xl mx-auto mb-10">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl relative overflow-hidden">
-          <div className="space-y-2 z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium">
-              <Sparkles size={14} />
-              <span>AEGIS Multi-Agent Core V2.0</span>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-              27-Agent Orchestrator Dashboard
-            </h1>
-            <p className="text-slate-400 text-sm max-w-2xl">
-              Intelligent multi-role orchestration powered by Groq, NVIDIA NIM, and HuggingFace endpoints. Automatically classifies user intent, routes tasks, and executes specialized workloads.
-            </p>
-          </div>
+  // Active chat item for macOS style center window modal popup
+  const [activeModalChat, setActiveModalChat] = useState<{ id: string; query: string; timestamp: string } | null>(null);
 
-          <div className="flex items-center gap-4 z-10">
-            <div className="text-right hidden sm:block">
-              <div className="text-2xl font-black text-white">{agents.length || 27}</div>
-              <div className="text-xs text-slate-400 font-medium">Active Agents</div>
+  // Separate recent 2 chats and remaining older history lines
+  const recentChats = userHistory.slice(0, 2);
+  const olderHistoryLines = userHistory.slice(2);
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-10 py-10 font-sans flex flex-col items-center justify-center min-h-[75vh] relative">
+      
+      {/* 1. RIGHT SIDEBAR: 2 Recent Chat Cards + History Lines */}
+      <div className="fixed right-6 top-28 w-64 hidden xl:flex flex-col space-y-4 z-40">
+        
+        {/* Top Header Label */}
+        <div className="flex items-center justify-between px-1">
+          <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-400">
+            Recent Activity
+          </span>
+          <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+            {userHistory.length} Saved
+          </span>
+        </div>
+
+        {/* 2 Small Boxes for Recent Chats */}
+        <div className="space-y-2.5">
+          {recentChats.length === 0 ? (
+            <div className="p-4 rounded-xl bg-black/60 border border-white/10 text-center">
+              <p className="text-[11px] font-mono text-slate-500">No recent chats yet</p>
             </div>
-            <div className="h-10 w-px bg-slate-800 hidden sm:block" />
-            <div className="px-4 py-2 bg-emerald-950/50 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs font-semibold flex items-center gap-2">
-              <Zap size={16} />
-              <span>Multi-Provider Active</span>
+          ) : (
+            recentChats.map((item, index) => (
+              <motion.button
+                key={item.id}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setActiveModalChat(item)}
+                className="w-full text-left p-3.5 rounded-xl bg-[#0c0d12]/90 border border-white/10 hover:border-white/20 transition-all cursor-pointer group shadow-lg relative overflow-hidden backdrop-blur-xl"
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-mono text-indigo-400 font-semibold uppercase">
+                    Recent #{index + 1}
+                  </span>
+                  <span className="text-[9px] font-mono text-slate-500">{item.timestamp}</span>
+                </div>
+                <p className="text-xs text-slate-300 font-mono line-clamp-2 leading-relaxed group-hover:text-white">
+                  {item.query}
+                </p>
+              </motion.button>
+            ))
+          )}
+        </div>
+
+        {/* History Lines Section Below Boxes */}
+        {olderHistoryLines.length > 0 && (
+          <div className="pt-2 border-t border-white/[0.08] space-y-1.5">
+            <span className="text-[10px] font-mono text-slate-500 block px-1 uppercase tracking-wider">
+              Older History
+            </span>
+            <div className="space-y-1 max-h-52 overflow-y-auto pr-1 scrollbar-thin">
+              {olderHistoryLines.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setActiveModalChat(item)}
+                  className="w-full text-left py-1.5 px-2 rounded-lg hover:bg-white/[0.06] transition-colors cursor-pointer group flex items-center justify-between text-xs font-mono"
+                >
+                  <span className="text-slate-400 group-hover:text-slate-200 truncate max-w-[170px]">
+                    {item.query}
+                  </span>
+                  <span className="text-[9px] text-slate-600 shrink-0">{item.timestamp}</span>
+                </button>
+              ))}
             </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Main Orchestrator Prompt Input */}
-      <div className="max-w-7xl mx-auto mb-12">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-          <h2 className="text-lg font-semibold text-slate-200 mb-2 flex items-center gap-2">
-            <Cpu className="text-indigo-400" size={20} />
-            <span>Master Orchestrator Prompt</span>
-          </h2>
-          <p className="text-xs text-slate-400 mb-4">
-            Type any prompt below. The Orchestrator will automatically classify your intent and delegate it to the best of the 27 agents. Alternatively, select a specific agent below to override auto-routing.
-          </p>
+      {/* 2. MACOS-STYLE CENTER WINDOW MODAL POPUP */}
+      <AnimatePresence>
+        {activeModalChat && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+            
+            {/* macOS Window Frame */}
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 15 }}
+              transition={{ type: "spring", damping: 25, stiffness: 350 }}
+              className="w-full max-w-lg bg-[#0f1118]/95 border border-white/15 rounded-2xl shadow-[0_25px_70px_rgba(0,0,0,0.9)] overflow-hidden font-sans relative"
+            >
+              {/* macOS Window Titlebar with Red/Yellow/Green Control Buttons */}
+              <div className="px-4 py-3 bg-white/[0.03] border-b border-white/[0.08] flex items-center justify-between select-none">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveModalChat(null)}
+                    className="w-3 h-3 rounded-full bg-[#ff5f56] hover:brightness-110 cursor-pointer flex items-center justify-center transition-all group"
+                    title="Close Window (Esc)"
+                  >
+                    <span className="opacity-0 group-hover:opacity-100 text-[8px] font-bold text-black">×</span>
+                  </button>
+                  <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+                  <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
+                </div>
+                <span className="text-xs font-mono text-slate-400 font-medium tracking-wide">
+                  Saved Chat Detail
+                </span>
+                <span className="text-[10px] font-mono text-slate-500">{activeModalChat.timestamp}</span>
+              </div>
 
-          <form onSubmit={handleOrchestrate} className="space-y-4">
+              {/* Modal Body Content */}
+              <div className="p-6 space-y-6">
+                <div>
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-1.5">
+                    Saved Prompt
+                  </label>
+                  <div className="p-4 rounded-xl bg-black/60 border border-white/10 text-sm font-mono text-slate-200 leading-relaxed">
+                    {activeModalChat.query}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/[0.06]">
+                  <button
+                    type="button"
+                    onClick={() => setActiveModalChat(null)}
+                    className="px-4 py-2 rounded-xl bg-white/[0.05] border border-white/10 text-slate-400 hover:text-white text-xs font-mono transition-all cursor-pointer"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPromptInput(activeModalChat.query);
+                      setActiveModalChat(null);
+                    }}
+                    className="px-5 py-2 rounded-xl bg-[#3ee7c4] hover:bg-[#32d4b2] text-black font-semibold text-xs font-mono transition-all cursor-pointer shadow-[0_0_20px_rgba(62,231,196,0.25)] flex items-center gap-1.5"
+                  >
+                    <span>Use Prompt</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Centered Minimalist Greeting Header */}
+      <div className="space-y-3 text-center">
+        <h1 className="text-4xl md:text-5xl font-extralight tracking-tight text-white/90">
+          Hey! <span className="font-normal text-white">{userName}</span>
+        </h1>
+        <h2 className="text-3xl md:text-4xl font-light text-white/40 tracking-tight">
+          What can I help with?
+        </h2>
+      </div>
+
+      {/* Input Box Wrapper with Sign-In Style Multi-Color Glow Backdrop & Edgy Corners */}
+      <div className="relative w-full">
+        {/* Sign-In Page Style Ambient Gradient Glow Aura */}
+        <div 
+          className="absolute inset-0 -m-2 bg-gradient-to-r from-[#5683da] via-[#ff8964] to-[#3ee7c4] rounded-2xl opacity-20 blur-2xl animate-pulse pointer-events-none" 
+          style={{ animationDuration: "5s" }}
+        />
+
+        {/* Screenshot Pixel-Perfect Edgy Input Container */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="relative z-10 rounded-xl bg-black border border-white/10 p-6 shadow-2xl overflow-hidden backdrop-blur-xl"
+        >
+          <form onSubmit={(e) => handleOrchestrate(e)} className="space-y-5">
             <div className="relative">
               <textarea
                 value={promptInput}
                 onChange={(e) => setPromptInput(e.target.value)}
-                placeholder="e.g. Write a Python function for rate-limiting REST APIs with Redis, or design a marketing strategy for our new SaaS launching next month..."
+                placeholder="Ask me anything......"
                 rows={3}
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl p-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-all resize-none"
+                className="w-full bg-transparent text-sm text-slate-200 placeholder-slate-600 focus:outline-none resize-none font-mono tracking-wide leading-relaxed"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleOrchestrate(e);
+                  }
+                }}
               />
-              {selectedAgent && (
-                <div className="absolute top-3 right-3 bg-indigo-950/80 border border-indigo-500/30 px-3 py-1 rounded-lg text-xs text-indigo-300 flex items-center gap-2">
-                  <span>Target Override: <strong>{selectedAgent.name}</strong></span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedAgent(null)}
-                    className="hover:text-white"
-                  >
-                    ×
-                  </button>
+
+              {/* Lovable-style Clean Text Processing Indicator (No symbols, no badges) */}
+              {orchestrating && (
+                <div className="mt-3 text-xs font-mono text-slate-400 animate-pulse tracking-wide">
+                  {processingStep}...
                 </div>
               )}
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="text-xs text-slate-400">
-                LLM Providers: <span className="text-indigo-400 font-medium">Groq (Llama 3.3)</span> • <span className="text-teal-400 font-medium">NVIDIA NIM</span> • <span className="text-sky-400 font-medium">HuggingFace</span>
-              </div>
+            <div className="flex items-center justify-between pt-1">
               <button
-                type="submit"
-                disabled={orchestrating || !promptInput.trim()}
-                className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white px-6 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/25"
+                type="button"
+                className="px-4 py-2 rounded-lg bg-[#161822] border border-white/[0.06] text-slate-400 text-xs font-mono hover:text-white transition-colors flex items-center gap-2 cursor-pointer"
               >
-                {orchestrating ? (
-                  <>
-                    <RefreshCw size={16} className="animate-spin" />
-                    <span>Orchestrating...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Execute Task</span>
-                    <ArrowRight size={16} />
-                  </>
-                )}
+                <span className="text-xs opacity-70">📎</span>
+                <span>Attach file</span>
               </button>
+
+              <div className="flex items-center gap-2.5">
+                <button 
+                  type="button"
+                  onClick={() => setShowRegistry(!showRegistry)}
+                  className="px-4 py-2 rounded-lg bg-[#161822] border border-white/[0.06] text-slate-400 hover:text-white transition-colors font-mono text-xs cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>{selectedAgent ? selectedAgent.name : "Override Agent"}</span>
+                  <span className="text-[10px]">▾</span>
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={orchestrating || !promptInput.trim()}
+                  className="w-9 h-9 rounded-lg bg-[#1b4e43] hover:bg-[#236456] disabled:opacity-20 text-[#32d4b2] font-semibold flex items-center justify-center transition-all duration-200 cursor-pointer shadow-md"
+                >
+                  {orchestrating ? (
+                    <RefreshCw size={15} className="animate-spin text-[#32d4b2]" />
+                  ) : (
+                    <ArrowRight size={17} />
+                  )}
+                </button>
+              </div>
             </div>
           </form>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Orchestrator Output Section - Multi-Agent Concurrent Flow */}
+      {/* Execution Blueprint Output */}
       {orchestratorResult && (
-        <div className="max-w-7xl mx-auto mb-12 space-y-6">
-          {/* Master Plan Header */}
-          <div className="bg-gradient-to-r from-slate-900 via-indigo-950/60 to-slate-900 border border-indigo-500/40 p-6 rounded-2xl shadow-2xl space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="inline-flex items-center gap-2 text-xs font-bold text-indigo-400 uppercase tracking-wider bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
-                <Sparkles size={14} />
-                <span>Master Orchestrator Plan</span>
-              </div>
-              <div className="text-xs text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-3 py-1 rounded-full font-mono flex items-center gap-1.5">
-                <Zap size={14} />
-                <span>{orchestratorResult.orchestrator_summary?.total_agents_assigned} Agents Running Simultaneously</span>
-              </div>
+        <div className="space-y-4 pt-4 animate-in fade-in duration-300">
+          <div className="p-5 rounded-2xl bg-[#0e1015]/80 border border-white/[0.08] space-y-2">
+            <div className="flex items-center justify-between text-xs text-white/40">
+              <span className="font-mono uppercase tracking-wider">Blueprint Execution</span>
+              <span className="text-emerald-400 font-mono">
+                {orchestratorResult.orchestrator_summary?.total_agents_assigned} Agents Dispatched
+              </span>
             </div>
-            
-            <h3 className="text-xl font-extrabold text-white">
+            <p className="text-sm font-medium text-white">
               {orchestratorResult.orchestrator_summary?.execution_plan}
-            </h3>
-            <p className="text-xs text-slate-400">
-              User Prompt: <span className="text-slate-200 italic">"{orchestratorResult.orchestrator_summary?.user_input}"</span>
             </p>
           </div>
 
-          {/* Concurrent Agents Execution Flow */}
-          <div className="space-y-6">
-            <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2">
-              <Bot className="text-indigo-400" size={20} />
-              <span>Active Agent Pipeline Executions</span>
-            </h3>
-
+          <div className="space-y-3">
             {orchestratorResult.agent_executions?.map((exec: any, idx: number) => {
               const resObj = exec.result;
               return (
-                <div
-                  key={idx}
-                  className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl transition-all"
-                >
-                  {/* Agent Card Header */}
-                  <div className="px-6 py-4 bg-slate-950 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold text-sm">
-                        #{idx + 1}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-slate-100 text-base">{exec.agent_name}</h4>
-                          <span className="text-[10px] uppercase font-semibold px-2.5 py-0.5 rounded-full bg-slate-800 text-indigo-300 border border-indigo-500/20">
-                            {exec.category}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-400">{exec.role}</p>
-                      </div>
+                <div key={idx} className="rounded-2xl bg-[#0e1015]/50 border border-white/[0.06] overflow-hidden">
+                  <div className="px-5 py-3 bg-white/[0.02] border-b border-white/[0.04] flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-white/40">0{idx + 1}.</span>
+                      <h4 className="text-xs font-medium text-white">{exec.agent_name}</h4>
                     </div>
-
-                    <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-3 py-1 rounded-full font-mono">
-                      <CheckCircle size={13} />
-                      <span>Execution Complete</span>
-                    </div>
+                    <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                      <CheckCircle size={12} /> Done
+                    </span>
                   </div>
 
-                  {/* Subtask Assigned */}
-                  <div className="p-4 bg-slate-950/50 border-b border-slate-800/60 text-xs text-slate-300">
-                    <strong className="text-indigo-400 font-mono">Assigned Subtask: </strong>
-                    <span>{exec.subtask}</span>
-                  </div>
-
-                  {/* Output Display */}
-                  <div className="p-6">
+                  <div className="p-5">
                     {resObj?.data ? (
                       <AgentDataTable
-                        title={`${exec.agent_name} Structured Output`}
+                        title={`${exec.agent_name} Output`}
                         agentName={exec.agent_name}
                         data={resObj.data}
                       />
                     ) : (
-                      <div className="bg-slate-950 border border-slate-800/80 rounded-xl p-4 font-mono text-sm text-slate-200 whitespace-pre-wrap leading-relaxed overflow-x-auto">
-                        {resObj?.content || JSON.stringify(resObj, null, 2)}
+                      <div className="p-5 rounded-xl bg-black/60 border border-white/[0.06] text-xs text-white/90 leading-relaxed font-sans overflow-x-auto space-y-4">
+                        {(() => {
+                          const rawContent = resObj?.content || (typeof resObj === "string" ? resObj : JSON.stringify(resObj, null, 2));
+                          
+                          // Helper function to render Python syntax highlighted code line by line
+                          const renderSyntaxCode = (code: string) => {
+                            return code.split("\n").map((line, idx) => {
+                              // Highlight comments
+                              if (line.trim().startsWith("#")) {
+                                return <div key={idx} className="text-slate-500 italic">{line}</div>;
+                              }
+                              
+                              // Highlight keywords & syntax tokens
+                              const tokens = line.split(/(\b(?:def|class|import|from|return|if|else|elif|for|while|in|try|except|with|as|async|await|pass|None|True|False|and|or|not|is|yield)\b|".*?"|'.*?'|\d+)/g);
+                              
+                              return (
+                                <div key={idx} className="min-h-[1.2em]">
+                                  {tokens.map((token, tIdx) => {
+                                    if (/^(def|class|import|from|return|if|else|elif|for|while|in|try|except|with|as|async|await|pass|yield)$/.test(token)) {
+                                      return <span key={tIdx} className="text-[#ff7b72] font-semibold">{token}</span>;
+                                    }
+                                    if (/^(None|True|False)$/.test(token)) {
+                                      return <span key={tIdx} className="text-[#79c0ff] font-semibold">{token}</span>;
+                                    }
+                                    if (/^(".*?"|'.*?')$/.test(token)) {
+                                      return <span key={tIdx} className="text-[#a5d6ff]">{token}</span>;
+                                    }
+                                    if (/^\d+$/.test(token)) {
+                                      return <span key={tIdx} className="text-[#79c0ff]">{token}</span>;
+                                    }
+                                    return <span key={tIdx}>{token}</span>;
+                                  })}
+                                </div>
+                              );
+                            });
+                          };
+
+                          // Parse markdown parts (code blocks vs formatted text)
+                          const parts = rawContent.split(/(```[\s\S]*?```)/g);
+                          return parts.map((part: string, pIdx: number) => {
+                            if (part.startsWith("```")) {
+                              const firstLineEnd = part.indexOf("\n");
+                              const lang = part.substring(3, firstLineEnd).trim() || "code";
+                              const codeBody = part.substring(firstLineEnd + 1, part.length - 3).trim();
+                              return (
+                                <div key={pIdx} className="my-4 rounded-xl overflow-hidden border border-white/10 bg-[#0d0f14] shadow-xl">
+                                  <div className="px-4 py-2 bg-white/[0.04] border-b border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-white/50">
+                                    <span className="uppercase tracking-wider text-indigo-400 font-semibold flex items-center gap-2">
+                                      <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
+                                      {lang}
+                                    </span>
+                                    <button 
+                                      onClick={() => navigator.clipboard.writeText(codeBody)}
+                                      className="hover:text-white transition-colors cursor-pointer px-2 py-0.5 rounded bg-white/[0.05] border border-white/10"
+                                    >
+                                      Copy code
+                                    </button>
+                                  </div>
+                                  <div className="p-4 font-mono text-[12px] text-slate-200 leading-relaxed overflow-x-auto selection:bg-indigo-500/30">
+                                    {renderSyntaxCode(codeBody)}
+                                  </div>
+                                </div>
+                              );
+                            }
+                            
+                            // Render standard markdown text with bolding and clean lists
+                            const lines = part.split("\n");
+                            return (
+                              <div key={pIdx} className="space-y-2">
+                                {lines.map((line: string, lIdx: number) => {
+                                  let cleanLine = line;
+                                  if (!cleanLine.trim()) return <div key={lIdx} className="h-1" />;
+
+                                  // Headers
+                                  if (cleanLine.startsWith("### ")) {
+                                    return <h4 key={lIdx} className="text-sm font-semibold text-white mt-4 mb-2 tracking-tight">{cleanLine.replace("### ", "")}</h4>;
+                                  }
+                                  if (cleanLine.startsWith("## ")) {
+                                    return <h3 key={lIdx} className="text-base font-bold text-white mt-5 mb-2 tracking-tight border-b border-white/10 pb-1.5">{cleanLine.replace("## ", "")}</h3>;
+                                  }
+                                  if (cleanLine.startsWith("# ")) {
+                                    return <h2 key={lIdx} className="text-lg font-bold text-white mt-6 mb-2">{cleanLine.replace("# ", "")}</h2>;
+                                  }
+
+                                  // Lists
+                                  const isBullet = cleanLine.trim().startsWith("- ") || cleanLine.trim().startsWith("* ");
+                                  if (isBullet) {
+                                    cleanLine = cleanLine.trim().replace(/^[-*]\s+/, "");
+                                  }
+
+                                  // Format bold **text** correctly without leaving raw asterisks
+                                  const partsBold = cleanLine.split(/(\*\*.*?\*\*)/g);
+                                  const formattedElements = partsBold.map((bPart, bIdx) => {
+                                    if (bPart.startsWith("**") && bPart.endsWith("**")) {
+                                      return <strong key={bIdx} className="font-semibold text-white">{bPart.slice(2, -2)}</strong>;
+                                    }
+                                    return bPart;
+                                  });
+
+                                  if (isBullet) {
+                                    return (
+                                      <div key={lIdx} className="flex items-start gap-2 ml-2 my-1 text-white/80">
+                                        <span className="text-indigo-400 font-bold shrink-0">•</span>
+                                        <div>{formattedElements}</div>
+                                      </div>
+                                    );
+                                  }
+
+                                  return <p key={lIdx} className="text-white/80 leading-relaxed">{formattedElements}</p>;
+                                })}
+                              </div>
+                            );
+                          });
+                        })()}
                       </div>
                     )}
                   </div>
@@ -299,6 +577,53 @@ export const AgentOrchestratorDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Optional Collapsible Agent Registry Grid */}
+      {showRegistry && (
+        <div className="space-y-4 pt-6 border-t border-white/[0.06] animate-in fade-in duration-200">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium text-white/80">Available Agents Matrix</h3>
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 text-white/30" size={13} />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 pr-3 py-1 bg-white/[0.03] border border-white/[0.08] rounded-lg text-xs text-white placeholder-white/30 focus:outline-none w-40"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {filteredAgents.map((agent) => {
+              const isSelected = selectedAgent?.agent_id === agent.agent_id;
+              return (
+                <div
+                  key={agent.agent_id}
+                  onClick={() => setSelectedAgent(isSelected ? null : agent)}
+                  className={`p-4 rounded-xl bg-[#0e1015]/60 border transition-all cursor-pointer flex flex-col justify-between h-32 hover:bg-[#13161f] ${
+                    isSelected ? "border-indigo-500/60 bg-indigo-950/20" : "border-white/[0.06]"
+                  }`}
+                >
+                  <div>
+                    <h4 className="text-xs font-medium text-white">{agent.name}</h4>
+                    <p className="text-[11px] text-white/40 font-light line-clamp-2 mt-1">
+                      {agent.description}
+                    </p>
+                  </div>
+                  <div className="text-[10px] text-indigo-400/80 font-mono">
+                    {isSelected ? "Selected ✓" : "Click to select"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
+
+

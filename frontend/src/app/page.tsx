@@ -38,7 +38,7 @@ function InteractiveNebulaShader({
   className = "",
 }: InteractiveNebulaShaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const materialRef  = useRef<THREE.ShaderMaterial>();
+  const materialRef  = useRef<THREE.ShaderMaterial | undefined>(undefined);
 
   useEffect(() => {
     const mat = materialRef.current;

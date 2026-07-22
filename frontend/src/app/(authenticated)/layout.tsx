@@ -63,7 +63,7 @@ export default function AuthenticatedLayout({
 
   return (
     <NavigationStateContext.Provider value={{ activeView, setActiveView }}>
-      <div className="flex h-screen bg-[#030303] text-white overflow-hidden relative font-sans antialiased">
+      <div className="flex h-screen bg-black text-white overflow-hidden relative font-sans antialiased">
         
         {/* Subtle Top Linear Light Fall */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-to-b from-[#5683da]/8 via-[#3ee7c4]/2 to-transparent blur-[110px] pointer-events-none z-0" />
